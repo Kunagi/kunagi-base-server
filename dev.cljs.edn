@@ -1,6 +1,9 @@
 ^{:watch-dirs ["src"
               "../bindscript/src"
               "../browser-headsup/src"
+              "../conform/src"
+              "../facts-db/src"
+              "../html-tools/src"
               "../kunagi-base/src"]}
 {:main kunagi-base-server.figwheel-adapter, :preloads [devtools.preload]}
 

@@ -6,6 +6,9 @@
                  :extra-paths ["target"
                                "../bindscript/src"
                                "../browser-headsup/src"
+                               "../conform/src"
+                               "../facts-db/src"
+                               "../html-tools/src"
                                "../kunagi-base/src"],
                  :main-opts ["--main" "figwheel.main" "--build" "dev"]}},
  :deps {compojure {:mvn/version "1.6.1"},
@@ -14,6 +17,8 @@
         ring-oauth2 {:mvn/version "0.1.4"},
         com.auth0/java-jwt {:mvn/version "3.7.0"},
         com.taoensso/sente {:mvn/version "1.13.1"},
+        kunagi/facts-db {:local/root "../facts-db"},
+        kunagi/html-tools {:local/root "../html-tools"},
         org.clojure/clojure {:mvn/version "1.10.0"},
         ring/ring-defaults {:mvn/version "0.3.2"},
         witek/bindscript {:local/root "../bindscript"},

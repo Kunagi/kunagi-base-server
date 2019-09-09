@@ -1,4 +1,6 @@
 {:own [witek/bindscript
+       kunagi/html-tools
+       kunagi/facts-db
        witek/kunagi-base]
 
  :foreign {
