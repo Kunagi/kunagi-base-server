@@ -1,5 +1,5 @@
 {:own [witek/bindscript
-       kunagi/html-tools
+       witek/html-tools
        kunagi/facts-db
        witek/kunagi-base]
 

@@ -14,12 +14,15 @@
 (defn app-html-servlet [{:as config
                          :keys [app-name
                                 app-label
-                                js-build-name]}]
+                                js-build-name
+                                browserapp-config-f]}]
   (fn [request]
     (htmlgen/page-html
+     request
      {:js-build-name js-build-name
       :modules [:browserapp]
-      :app-name app-name
+      :browserapp-name app-name
+      :browserapp-config-f browserapp-config-f
       :title app-label})))
 
 
