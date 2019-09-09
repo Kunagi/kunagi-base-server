@@ -1,13 +1,16 @@
-(ns kunagi-base-server.oauth)
+(ns kunagi-base-server.oauth
+  (:require
+   [compojure.core :as compojure]
+   [ring.middleware.oauth2 :as ring-oauth]))
 
 
 (defn create-base-config
   [config secrets provider-key provider-specific-config]
-  (let [users-config (get-in config [:oauth provider-key])]
+  (let [users-config (get-in config [provider-key])]
     (if (:enabled? users-config)
       (let [own-uri (get-in config [:http-server/uri])
             prefix (or own-uri "")
-            secrets (get-in secrets [:oauth provider-key])]
+            secrets (get-in secrets [provider-key])]
         (if-not secrets
           nil
           (-> {:launch-uri       (str "/oauth/" (name provider-key))
@@ -52,7 +55,7 @@
      keys)))
 
 
-(defn handle-oauth-completed
+(defn oauth-completed-handler
   [request authenticate-f]
   (let [access-tokens (-> request :session :ring.middleware.oauth2/access-tokens)
         google (:google access-tokens)
@@ -66,3 +69,13 @@
       {:session {:auth/user-id user-id}
        :status 303
        :headers {"Location" "/"}})))
+
+
+(defn routes [{:keys [authenticate-f]}]
+  [(compojure/GET "/oauth/completed" [] (fn [req] (oauth-completed-handler req authenticate-f)))])
+
+
+(defn wrappers [{:keys [config
+                        secrets]}]
+  [(fn [routes]
+     (ring-oauth/wrap-oauth2 routes (create-ring-oauth2-config config secrets)))])

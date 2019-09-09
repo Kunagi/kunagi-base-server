@@ -1,6 +1,8 @@
 (ns kunagi-base-server.auth
   (:require
-   [compojure.core :as compojure]))
+   [compojure.core :as compojure]
+
+   [kunagi-base-server.oauth :as oauth]))
 
 
 (defn handler-with-auth
@@ -20,5 +22,12 @@
    :headers {"Location" "/"}})
 
 
-(defn routes []
-  [(compojure/GET "/sign-out" [] signout-handler)])
+(defn routes [config]
+  (-> []
+      (conj (compojure/GET "/sign-out" [] signout-handler))
+      (into (oauth/routes config))))
+
+
+(defn wrappers [config]
+  (-> []
+      (into (oauth/wrappers config))))
