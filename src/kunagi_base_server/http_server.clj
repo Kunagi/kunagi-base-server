@@ -8,7 +8,10 @@
    [compojure.core :as compojure]
    [compojure.route :as compojure-route]
 
-   [html-tools.htmlgen :as htmlgen]))
+   [html-tools.htmlgen :as htmlgen]
+   [kunagi-base.appconfig.api :as config]
+
+   [kunagi-base-server.oauth :as oauth]))
 
 
 (defn app-html-servlet [{:as config
@@ -26,10 +29,13 @@
       :title app-label})))
 
 
-(defn create-default-routes [config]
+(defn create-default-routes
+  [{:as config
+    :keys [authenticate-f]}]
   [(compojure/GET  "/"               [] {:status 301 :headers {"Location" "/ui/"}})
    (compojure/GET  "/ui"             [] {:status 301 :headers {"Location" "/ui/"}})
    (compojure/GET  "/ui/**"          [] (app-html-servlet config))
+   (compojure/GET "/oauth/completed" [] (fn [req] (oauth/handle-oauth-completed req authenticate-f)))
    (compojure-route/files "/"        {:root "target/public"}) ;; TODO remove in prod
    (compojure-route/resources "/"    {:root "public"})
    (compojure-route/not-found        "404 - Page not found")])
@@ -51,11 +57,12 @@
 (defn start!
   [{:as config
     :keys [port
-           oauth2-config
            app-routes]}]
   (let [port (or port 3000)
         routes (-> []
                    (into app-routes)
-                   (into (create-default-routes config)))]
-    (tap> [::start! {:port port}])
+                   (into (create-default-routes config)))
+        oauth2-config (oauth/create-ring-oauth2-config config (config/secrets))]
+    (tap> [:dbg ::oauth2-config oauth2-config])
+    (tap> [:inf ::start! {:port port}])
     (http-kit/run-server (wrap-routes routes oauth2-config) {:port port})))
