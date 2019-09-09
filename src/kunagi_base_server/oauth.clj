@@ -66,6 +66,9 @@
                                            :sub (:sub userinfo)
                                            :email (:email userinfo)
                                            :name (:name userinfo)}})]
+      (if user-id
+        (tap> [:inf ::authenticated user-id])
+        (tap> [:inf ::authentication-failed userinfo]))
       {:session {:auth/user-id user-id}
        :status 303
        :headers {"Location" "/"}})))
