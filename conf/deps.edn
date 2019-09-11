@@ -1,7 +1,9 @@
 {:own [witek/bindscript
        witek/html-tools
        kunagi/facts-db
-       witek/kunagi-base]
+       kunagi/kunagi-base
+       kunagi/kunagi-cqrs]
+
 
  :foreign {
            ;; cljc
