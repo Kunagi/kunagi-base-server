@@ -22,10 +22,10 @@
    :headers {"Location" "/"}})
 
 
-(defn routes [config]
+(defn routes []
   (-> []
       (conj (compojure/GET "/sign-out" [] signout-handler))
-      (into (oauth/routes config))))
+      (into (oauth/routes))))
 
 
 (defn wrappers [config]

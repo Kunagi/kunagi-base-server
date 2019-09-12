@@ -2,25 +2,27 @@
   (:require
    [compojure.core :as compojure]
 
-   [html-tools.htmlgen :as htmlgen]))
+   [html-tools.htmlgen :as htmlgen]
+   [kunagi-base.cqrs.api :as cqrs]
+   [kunagi-base.context :as context]))
 
 
-(defn app-html-servlet
-  [{:keys [app-name
-           app-label
-           js-build-name
-           browserapp-config-f]}]
-  (fn [request]
+(defn- browserapp-config [req context]
+  (-> {}
+      (assoc :auth/user (cqrs/query-sync-r1 context [:auth/user--for-browserapp]))))
+
+
+(defn serve-app [context]
+  (let [app-info (-> context :db :app-info)]
     (htmlgen/page-html
-     request
-     {:js-build-name js-build-name
-      :modules [:browserapp]
-      :browserapp-name app-name
-      :browserapp-config-f browserapp-config-f
-      :title app-label})))
+     (-> context :http/request)
+     {:modules [:browserapp]
+      :browserapp-config-f #(browserapp-config % context)
+      :js-build-name (-> context :db :config :browserapp/js-build-name)
+      :browserapp-name (-> app-info :app-name)
+      :title (-> app-info :app-label)})))
 
 
-(defn routes [browserapp-config]
-  [(compojure/GET  "/"               [] {:status 301 :headers {"Location" "/ui/"}})
-   (compojure/GET  "/ui"             [] {:status 301 :headers {"Location" "/ui/"}})
-   (compojure/GET  "/ui/**"          [] (app-html-servlet browserapp-config))])
+(defn serve-redirect-to-app [context]
+  {:status 301 :headers {"Location" "/ui/"}})
+

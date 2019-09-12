@@ -1,5 +1,6 @@
 (ns kunagi-base-server.http-server
   (:require
+   [clojure.spec.alpha :as s]
    [ring.middleware.defaults :as ring-defaults]
    [ring.middleware.params :as ring-params]
    [ring.util.response :as ring-resp]
@@ -12,6 +13,9 @@
    [kunagi-base.cqrs.api :as cqrs]
 
    [kunagi-base.context :as context]))
+
+
+(s/def ::route-path string?)
 
 
 (defn- request-permitted?
@@ -42,6 +46,7 @@
 (defn GET
   [{:as handler
     :keys [path]}]
+  (s/assert ::route-path path)
   (compojure/GET path [] (new-get-handler handler)))
 
 
@@ -106,9 +111,12 @@
 
 
 (defn- routes-from-cqrs [context]
-  (->> (cqrs/query-sync context [:http/get-routes])
+  (->> (cqrs/query-sync context [:http-server/routes])
        :results
-       (map GET)))
+       (map (fn [{:as route :keys [method]}]
+              (case method
+                ;:post (POST route)
+                (GET route))))))
 
 
 (defn- apply-wrappers [routes wrappers]

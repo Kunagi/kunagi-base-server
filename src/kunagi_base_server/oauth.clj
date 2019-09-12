@@ -1,7 +1,28 @@
 (ns kunagi-base-server.oauth
   (:require
    [compojure.core :as compojure]
-   [ring.middleware.oauth2 :as ring-oauth]))
+   [ring.middleware.oauth2 :as ring-oauth]
+
+   [kunagi-base.context :as context]
+   [kunagi-base.cqrs.api :as cqrs]
+   [kunagi-base.auth.users-db :as users-db]))
+
+
+(defn- user-id-by-oauth-google
+  [context {:keys [email]}]
+  (cqrs/query-sync-r1 context [:auth/user-id-by-google-email email]))
+
+
+(defn- user-id-by-oauth
+  [context auth-info]
+  (case (-> auth-info :service)
+    :google (user-id-by-oauth-google context auth-info)))
+
+
+(defn- authenticate
+  [context auth-info]
+  (tap> [:dbg ::authenticate auth-info])
+  (user-id-by-oauth context (-> auth-info :oauth)))
 
 
 (defn create-base-config
@@ -55,17 +76,19 @@
      keys)))
 
 
-(defn oauth-completed-handler
-  [request authenticate-f]
+(defn server-oauth-completed
+  [request]
   (let [access-tokens (-> request :session :ring.middleware.oauth2/access-tokens)
         google (:google access-tokens)
         access-token (:token google)
         id-token (:id-token google)
         userinfo (decode-jwt id-token)]
-    (let [user-id (authenticate-f {:oauth {:service :google
-                                           :sub (:sub userinfo)
-                                           :email (:email userinfo)
-                                           :name (:name userinfo)}})]
+    (let [user-id (authenticate
+                   (context/from-http-request request)
+                   {:oauth {:service :google
+                            :sub (:sub userinfo)
+                            :email (:email userinfo)
+                            :name (:name userinfo)}})]
       (if user-id
         (tap> [:inf ::authenticated user-id])
         (tap> [:inf ::authentication-failed userinfo]))
@@ -74,8 +97,8 @@
        :headers {"Location" "/"}})))
 
 
-(defn routes [{:keys [authenticate-f]}]
-  [(compojure/GET "/oauth/completed" [] (fn [req] (oauth-completed-handler req authenticate-f)))])
+(defn routes []
+  [(compojure/GET "/oauth/completed" [] server-oauth-completed)])
 
 
 (defn wrappers [{:keys [config
