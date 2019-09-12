@@ -9,8 +9,7 @@
                                "../conform/src"
                                "../facts-db/src"
                                "../html-tools/src"
-                               "../kunagi-base/src"
-                               "../kunagi-cqrs/src"],
+                               "../kunagi-base/src"],
                  :main-opts ["--main" "figwheel.main" "--build" "dev"]}},
  :deps {compojure {:mvn/version "1.6.1"},
         http-kit {:mvn/version "2.3.0"},
@@ -20,7 +19,6 @@
         com.taoensso/sente {:mvn/version "1.13.1"},
         kunagi/facts-db {:local/root "../facts-db"},
         kunagi/kunagi-base {:local/root "../kunagi-base"},
-        kunagi/kunagi-cqrs {:local/root "../kunagi-cqrs"},
         org.clojure/clojure {:mvn/version "1.10.0"},
         ring/ring-defaults {:mvn/version "0.3.2"},
         witek/bindscript {:local/root "../bindscript"},
