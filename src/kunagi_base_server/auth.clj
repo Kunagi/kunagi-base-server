@@ -11,8 +11,7 @@
 (defn user--for-browserapp [context]
   (when-let [users-db (-> context :db :auth/users-db)]
     (when-let [user (db/query users-db [:user--for-browserapp (-> context :auth/user-id)])]
-      ;;(users-db/user--for-browserapp users-db (-> context :auth/user-id))]
-      [user])))
+      user)))
 
 
 (defn- serve-sign-out [context]
