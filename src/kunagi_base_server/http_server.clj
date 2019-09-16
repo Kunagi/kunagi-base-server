@@ -253,11 +253,11 @@
 
 (defn- serve-sente-post [req]
   (let [socket (sente-socket)
-        post-f (-> sente-socket :ajax-post)]
+        post-f (-> sente-socket :ajax-post-fn)]
     (if post-f
       (post-f req)
       (do
-        (tap> [:err ::missing-sente-ajax-post {:socket socket}])
+        (tap> [:err ::missing-sente-ajax-post-fn {:socket socket}])
         nil))))
 
 ;;; http server
