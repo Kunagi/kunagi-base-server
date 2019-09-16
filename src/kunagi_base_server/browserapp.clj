@@ -33,19 +33,22 @@
 
 
 (def-module
-  {:module/ident :browserapp})
+  {:module/id ::browserapp})
 
 (def-route
-  {:route/path "/"
+  {:route/id ::root-redirect
+   :route/path "/"
    :route/serve-f serve-redirect-to-app
    :route/req-perms []})
 
 (def-route
-  {:route/path "/ui"
+  {:route/id ::ui-redirect
+   :route/path "/ui"
    :route/serve-f serve-redirect-to-app
    :route/req-perms []})
 
 (def-route
-  {:route/path "/ui/**"
+  {:route/id ::app
+   :route/path "/ui/**"
    :route/serve-f serve-app
    :route/req-perms []})

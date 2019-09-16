@@ -3,12 +3,17 @@
    [compojure.core :as compojure]
    [ring.middleware.oauth2 :as ring-oauth]
 
+   [kunagi-base.appmodel :refer [def-module]]
    [kunagi-base.context :as context]
    [kunagi-base.cqrs.api :as cqrs]
    [kunagi-base.auth.users-db :as users-db]
    [kunagi-base-server.http-server :refer [def-route def-routes-wrapper]]
 
    [kunagi-base-server.oauth]))
+
+
+(def-module
+  {:module/id ::server-oauth})
 
 
 (defn- user-id-by-oauth-google
@@ -103,7 +108,7 @@
 
 
 (def-route
-  {:route/ident ::oauth-completed
+  {:route/id ::oauth-completed
    :route/path "/oauth/completed"
    :route/serve-f serve-oauth-completed
    :route/req-perms []})
@@ -117,7 +122,7 @@
 
 
 (def-routes-wrapper
-  {:routes-wrapper/ident :oauth2
+  {:routes-wrapper/id ::oauth2
    :routes-wrapper/wrapper-f oauth2-wrapper})
 
 

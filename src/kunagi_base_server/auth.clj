@@ -22,11 +22,11 @@
 
 
 (def-module
-  {:module/ident :server-auth})
+  {:module/id ::server-auth})
 
 
 (def-route
-  {:route/ident :sign-out
+  {:route/id ::sign-out
    :route/path "/sign-out"
    :route/serve-f serve-sign-out
    :route/req-perms []})
