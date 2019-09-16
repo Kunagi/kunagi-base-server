@@ -268,7 +268,7 @@
   []
   [(GET {:path "/api/asset"
          :serve-f serve-asset
-         :req-perms [:base/read-assets]})
+         :req-perms [:assets/read]})
    (GET {:path "/api/query"
          :serve-f serve-query-data
          :req-perms [:cqrs/query]})
