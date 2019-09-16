@@ -1,13 +1,18 @@
 (ns kunagi-base-server.figwheel)
 
 
-(defn ring-handler-for-figwheel [start-fn]
+(defonce !started? (atom false))
+
+
+(defn ring-handler [start-fn]
   (fn [request]
     (let [href (str "http://localhost:" 3000)]
       (if (and (= :get (:request-method request))
                (= "/"  (:uri request)))
         (do
-          (start-fn)
+          (when-not @!started?
+            (reset! !started? true)
+            (start-fn))
           {:status 302
            :headers {"Location" href}})
         {:status 404
