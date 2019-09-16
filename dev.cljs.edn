@@ -4,7 +4,9 @@
               "../conform/src"
               "../facts-db/src"
               "../html-tools/src"
-              "../kunagi-base/src"]}
+              "../kunagi-base-browserapp/src"
+              "../kunagi-base/src"
+              "../mui-commons/src"]}
 {:closure-defines {},
  :main kunagi-base-server.figwheel-adapter,
  :optimizations :none,

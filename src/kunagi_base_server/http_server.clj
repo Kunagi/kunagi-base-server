@@ -6,10 +6,13 @@
    [ring.util.response :as ring-resp]
    [ring.util.mime-type :as ring-mime]
    [org.httpkit.server :as http-kit]
+   [taoensso.sente :as sente]
+   [taoensso.sente.server-adapters.http-kit :as sente-adapter]
    [compojure.core :as compojure]
    [compojure.route :as compojure-route]
 
    [kunagi-base.appmodel :as appmodel :refer [def-extension def-module]]
+   [kunagi-base.events :as events]
    [kunagi-base.startup :refer [def-init-function]]
    [kunagi-base.auth.api :as auth]
    [kunagi-base.cqrs.api :as cqrs]
@@ -182,6 +185,66 @@
      wrappers)))
 
 
+;;; sente
+
+(defn determine-sente-user-id [request]
+  (str
+   (-> request :session :auth/user-id)
+   "/"
+   (-> request :client-id)))
+
+
+(defn- on-connections-changed
+  [old-val new-val]
+  (let [old-ids (:any old-val)
+        new-ids (:any new-val)
+        connected-ids (remove old-ids new-ids)
+        disconnected-ids (remove new-ids old-ids)]
+    (doseq [client-id connected-ids]
+      (tap> [:!!! ::connected client-id]))
+    (doseq [client-id disconnected-ids]
+      (tap> [:!!! ::disconnected client-id]))))
+
+
+(defn- on-event-received [event context]
+  (events/dispatch-event! event context))
+
+
+(defn- respond-to-client [send-fn sente-user-id event]
+  (send-fn sente-user-id [:kunagi-base/event event]))
+
+
+(defn- on-data-received [data]
+  ;; (tap> [:!!! ::data-received data])
+  (when (= :kunagi-base/event (-> data :id))
+    (on-event-received
+     (-> data :event second)
+     (-> data
+         context/from-http-async-data
+         auth/update-context
+         (assoc :comm/response-f (partial
+                                  respond-to-client
+                                  (-> data :send-fn)
+                                  (-> data :uid)))))))
+
+
+(defn- create-socket
+  []
+  (let [socket (sente/make-channel-socket!
+                (sente-adapter/get-sch-adapter)
+                {:user-id-fn determine-sente-user-id})]
+    (add-watch (:connected-uids socket)
+               :connected-uids
+               (fn [_ _ old-val new-val]
+                 (when (not= old-val new-val)
+                   (on-connections-changed old-val new-val))))
+    (sente/start-server-chsk-router! (:ch-recv socket) #(on-data-received %))
+    socket))
+
+
+(defonce sente-socket (create-socket)) ;; TODO create on demand
+
+
 ;;; http server
 
 (defn- create-default-routes
@@ -195,6 +258,10 @@
    (GET {:path "/api/query-file"
          :serve-f serve-query-file
          :req-perms [:cqrs/query]})
+
+   (compojure/GET  "/chsk"  req ((:ajax-get-or-ws-handshake-fn sente-socket) req))
+   (compojure/POST "/chsk"  req ((:ajax-post sente-socket) req))
+
    (compojure-route/files "/"        {:root "target/public"}) ;; TODO remove in prod
    (compojure-route/resources "/"    {:root "public"})
    (compojure-route/not-found        "404 - Page not found")])

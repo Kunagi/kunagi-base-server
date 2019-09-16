@@ -9,16 +9,18 @@
                                "../conform/src"
                                "../facts-db/src"
                                "../html-tools/src"
-                               "../kunagi-base/src"],
+                               "../kunagi-base-browserapp/src"
+                               "../kunagi-base/src"
+                               "../mui-commons/src"],
                  :main-opts ["--main" "figwheel.main" "--build" "dev"]}},
  :deps {compojure {:mvn/version "1.6.1"},
         http-kit {:mvn/version "2.3.0"},
         ring {:mvn/version "1.7.0"},
         ring-oauth2 {:mvn/version "0.1.4"},
         com.auth0/java-jwt {:mvn/version "3.7.0"},
-        com.taoensso/sente {:mvn/version "1.13.1"},
         kunagi/facts-db {:local/root "../facts-db"},
         kunagi/kunagi-base {:local/root "../kunagi-base"},
+        kunagi/kunagi-base-browserapp {:local/root "../kunagi-base-browserapp"},
         org.clojure/clojure {:mvn/version "1.10.0"},
         ring/ring-defaults {:mvn/version "0.3.2"},
         witek/bindscript {:local/root "../bindscript"},
