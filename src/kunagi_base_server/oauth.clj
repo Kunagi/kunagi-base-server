@@ -5,12 +5,16 @@
 
    [kunagi-base.context :as context]
    [kunagi-base.cqrs.api :as cqrs]
-   [kunagi-base.auth.users-db :as users-db]))
+   [kunagi-base.auth.users-db :as users-db]
+   [kunagi-base-server.http-server :refer [def-route def-routes-wrapper]]
+
+   [kunagi-base-server.oauth]))
 
 
 (defn- user-id-by-oauth-google
   [context {:keys [email]}]
-  (cqrs/query-sync-r1 context [:auth/user-id-by-google-email email]))
+  (when-let [users-db (-> context :db :auth/users-db)]
+    (users-db/user-id-by-google-email users-db email)))
 
 
 (defn- user-id-by-oauth
@@ -27,7 +31,7 @@
 
 (defn create-base-config
   [config secrets provider-key provider-specific-config]
-  (let [users-config (get-in config [provider-key])]
+  (let [users-config (get-in config [:http-server/oauth provider-key])]
     (if (:enabled? users-config)
       (let [own-uri (get-in config [:http-server/uri])
             prefix (or own-uri "")
@@ -76,9 +80,10 @@
      keys)))
 
 
-(defn server-oauth-completed
-  [request]
-  (let [access-tokens (-> request :session :ring.middleware.oauth2/access-tokens)
+(defn serve-oauth-completed
+  [context]
+  (let [request (-> context :http/request)
+        access-tokens (-> request :session :ring.middleware.oauth2/access-tokens)
         google (:google access-tokens)
         access-token (:token google)
         id-token (:id-token google)
@@ -97,11 +102,25 @@
        :headers {"Location" "/"}})))
 
 
-(defn routes []
-  [(compojure/GET "/oauth/completed" [] server-oauth-completed)])
+(def-route
+  {:route/ident ::oauth-completed
+   :route/path "/oauth/completed"
+   :route/serve-f serve-oauth-completed
+   :route/req-perms []})
 
 
-(defn wrappers [{:keys [config
-                        secrets]}]
+(defn- oauth2-wrapper [context]
+  (fn [routes]
+    (let [config (-> context :db :appconfig/config)
+          secrets (-> context :db :appconfig/secrets-f (apply []) :oauth)]
+      (ring-oauth/wrap-oauth2 routes (create-ring-oauth2-config config secrets)))))
+
+
+(def-routes-wrapper
+  {:routes-wrapper/ident :oauth2
+   :routes-wrapper/wrapper-f oauth2-wrapper})
+
+
+(defn wrappers []
   [(fn [routes]
-     (ring-oauth/wrap-oauth2 routes (create-ring-oauth2-config config secrets)))])
+     (oauth2-wrapper))])

@@ -2,32 +2,31 @@
   (:require
    [compojure.core :as compojure]
 
-   [kunagi-base-server.oauth :as oauth]))
+   [facts-db.api :as db]
+
+   [kunagi-base.appmodel :refer [def-module]]
+   [kunagi-base-server.http-server :refer [def-route]]))
 
 
-(defn handler-with-auth
-  ([handler]
-   (handler-with-auth handler :authenticated))
-  ([handler required-permission]
-   (fn [req]
-     (if-let [user-id (-> req :session :auth/user-id)]
-       (handler req)
-       {:status 401
-        :body "Unauthorized"}))))
+(defn user--for-browserapp [context]
+  (when-let [users-db (-> context :db :auth/users-db)]
+    (when-let [user (db/query users-db [:user--for-browserapp (-> context :auth/user-id)])]
+      ;;(users-db/user--for-browserapp users-db (-> context :auth/user-id))]
+      [user])))
 
 
-(defn signout-handler [request]
+(defn- serve-sign-out [context]
   {:session nil
    :status 303
    :headers {"Location" "/"}})
 
 
-(defn routes []
-  (-> []
-      (conj (compojure/GET "/sign-out" [] signout-handler))
-      (into (oauth/routes))))
+(def-module
+  {:module/ident :server-auth})
 
 
-(defn wrappers [config]
-  (-> []
-      (into (oauth/wrappers config))))
+(def-route
+  {:route/ident :sign-out
+   :route/path "/sign-out"
+   :route/serve-f serve-sign-out
+   :route/req-perms []})

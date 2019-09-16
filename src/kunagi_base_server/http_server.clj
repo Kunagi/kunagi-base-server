@@ -9,13 +9,38 @@
    [compojure.core :as compojure]
    [compojure.route :as compojure-route]
 
+   [kunagi-base.appmodel :as appmodel]
    [kunagi-base.auth.api :as auth]
    [kunagi-base.cqrs.api :as cqrs]
+   [kunagi-base.assets :as assets]
 
    [kunagi-base.context :as context]))
 
 
 (s/def ::route-path string?)
+
+
+;;; appmodel
+
+
+(appmodel/def-extension
+  {:schema {:route/module {:db/type :db.type/ref}
+            :routes-wrapper/module {:db/type :db.type/ref}}})
+
+
+(defn def-route [route]
+  (appmodel/register-entity
+   :route
+   route))
+
+
+(defn def-routes-wrapper [routes-wrapper]
+  (appmodel/register-entity
+   :routes-wrapper
+   routes-wrapper))
+
+
+;;;
 
 
 (defn- request-permitted?
@@ -50,6 +75,19 @@
   (compojure/GET path [] (new-get-handler handler)))
 
 
+(defn- serve-file [file context]
+  (if (and file (.exists file))
+    (let [filename (or (-> context :http/request :params :filename)
+                       (.getName file))]
+      (-> (ring-resp/file-response (.getPath file) {})
+          (ring-resp/content-type (ring-mime/ext-mime-type filename))
+          (ring-resp/header "Content-Disposition"
+                            (str "attachment; filename=\""
+                                 filename
+                                 "\""))))
+    (ring-resp/not-found)))
+
+
 ;;; cqrs routes
 
 
@@ -67,7 +105,7 @@
      :body "Missing Parameter: [edn]"}))
 
 
-(defn- query-data-handler [context]
+(defn- serve-query-data [context]
   (a-query-handler context
                    (fn [result]
                      (-> result
@@ -77,32 +115,77 @@
                          (ring-resp/content-type "text/edn")))))
 
 
-(defn- query-file-handler [context]
+(defn- serve-query-file [context]
   (a-query-handler context
                    (fn [result]
                      (let [results (get result :results)
                            file (first results)]
-                       (if (and file (.exists file))
-                         (let [filename (or (-> context :http/request :params :filename)
-                                            (.getName file))]
-                           (-> (ring-resp/file-response (.getPath file) {})
-                               (ring-resp/content-type (ring-mime/ext-mime-type filename))
-                               (ring-resp/header "Content-Disposition"
-                                            (str "attachment; filename=\""
-                                                 filename
-                                                 "\""))))
-                         (ring-resp/not-found))))))
+                       (serve-file file context)))))
+
+;;; appmodel routes
+
+
+;;; asset route
+
+
+(defn- serve-asset [context]
+  (if-let [edn (-> context :http/request :params :edn)]
+    (let [path (read-string edn)]
+      (try
+        (let [asset (assets/asset-for-output path context)]
+          (if (instance? java.io.File asset)
+            (serve-file asset context)
+            (-> asset
+                pr-str
+                (ring-resp/response)
+                (ring-resp/content-type "text/edn"))))
+        (catch Throwable ex
+          (tap> [:dbg ::providing-asset-failed ex])
+          {:status 400
+           :body "Providing asset failed"})))
+    {:status 400
+     :body "Missing Parameter: [edn]"}))
+
+
+(defn- routes-from-appmodel []
+  (let [routes (appmodel/q!
+                '[:find ?path ?serve-f ?req-perms
+                  :where
+                  [?r :route/path ?path]
+                  [?r :route/serve-f ?serve-f]
+                  [?r :route/req-perms ?req-perms]])]
+    (map
+     (fn [[path serve-f req-perms]]
+       (GET
+        {:path path
+         :serve-f serve-f
+         :req-perms req-perms}))
+     routes)))
+
+
+(defn- wrappers-from-appmodel [context]
+  (let [wrappers (appmodel/q!
+                  '[:find ?wrapper-f
+                    :where
+                    [?r :routes-wrapper/wrapper-f ?wrapper-f]])]
+    (map
+     (fn [[wrapper-f]]
+       (wrapper-f context))
+     wrappers)))
 
 
 ;;; http server
 
 (defn- create-default-routes
   []
-  [(GET {:path "/api/query"
-         :serve-f query-data-handler
+  [(GET {:path "/api/asset"
+         :serve-f serve-asset
+         :req-perms [:base/read-assets]})
+   (GET {:path "/api/query"
+         :serve-f serve-query-data
          :req-perms [:cqrs/query]})
    (GET {:path "/api/query-file"
-         :serve-f query-file-handler
+         :serve-f serve-query-file
          :req-perms [:cqrs/query]})
    (compojure-route/files "/"        {:root "target/public"}) ;; TODO remove in prod
    (compojure-route/resources "/"    {:root "public"})
@@ -110,13 +193,13 @@
 
 
 
-(defn- routes-from-cqrs [context]
-  (->> (cqrs/query-sync context [:http-server/routes])
-       :results
-       (map (fn [{:as route :keys [method]}]
-              (case method
-                ;:post (POST route)
-                (GET route))))))
+;; (defn- routes-from-cqrs [context]
+;;   (->> (cqrs/query-sync context [:http-server/routes])
+;;        :results
+;;        (map (fn [{:as route :keys [method]}]
+;;               (case method
+;;                 ;:post (POST route)
+;;                 (GET route))))))
 
 
 (defn- apply-wrappers [routes wrappers]
@@ -142,17 +225,15 @@
 
 
 (defn start!
-  [context
-   {:keys [port
-           app-routes
-           app-wrappers]}]
-  (let [port (or port 3000)
+  [context]
+  (let [port (or (-> context :appconfig/config :http-server/port)
+                 3000)
         routes (-> []
-                   (into (routes-from-cqrs context))
-                   (into app-routes)
+                   (into (routes-from-appmodel))
                    (into (create-default-routes)))
         wrappers (-> []
-                     (into app-wrappers))]
+                     (into (wrappers-from-appmodel context)))]
+    ;;(tap> [:dbg ::routes routes])
     (tap> [:inf ::start! {:port port}])
     (http-kit/run-server (wrap-routes routes wrappers) {:port port})))
 
