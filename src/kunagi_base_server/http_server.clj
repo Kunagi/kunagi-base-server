@@ -242,8 +242,23 @@
     socket))
 
 
-(defonce sente-socket (create-socket)) ;; TODO create on demand
+(defonce !sente-socket (atom nil))
 
+(defn- sente-socket []
+  (if-let [socket @!sente-socket]
+    socket
+    (let [socket (create-socket)]
+      (reset! !sente-socket socket)
+      socket)))
+
+(defn- serve-sente-post [req]
+  (let [socket (sente-socket)
+        post-f (-> sente-socket :ajax-post)]
+    (if post-f
+      (post-f req)
+      (do
+        (tap> [:err ::missing-sente-ajax-post {:socket socket}])
+        nil))))
 
 ;;; http server
 
@@ -259,8 +274,8 @@
          :serve-f serve-query-file
          :req-perms [:cqrs/query]})
 
-   (compojure/GET  "/chsk"  req ((:ajax-get-or-ws-handshake-fn sente-socket) req))
-   (compojure/POST "/chsk"  req ((:ajax-post sente-socket) req))
+   (compojure/GET  "/chsk" [] (fn [req] ((:ajax-get-or-ws-handshake-fn (sente-socket)) req)))
+   (compojure/POST "/chsk" [] serve-sente-post)
 
    (compojure-route/files "/"        {:root "target/public"}) ;; TODO remove in prod
    (compojure-route/resources "/"    {:root "public"})
