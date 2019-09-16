@@ -9,7 +9,8 @@
    [compojure.core :as compojure]
    [compojure.route :as compojure-route]
 
-   [kunagi-base.appmodel :as appmodel]
+   [kunagi-base.appmodel :as appmodel :refer [def-extension def-module]]
+   [kunagi-base.startup :refer [def-init-function]]
    [kunagi-base.auth.api :as auth]
    [kunagi-base.cqrs.api :as cqrs]
    [kunagi-base.assets :as assets]
@@ -23,9 +24,16 @@
 ;;; appmodel
 
 
-(appmodel/def-extension
+(def-module
+  {:module/id ::http-server})
+
+
+
+
+(def-extension
   {:schema {:route/module {:db/type :db.type/ref}
             :routes-wrapper/module {:db/type :db.type/ref}}})
+
 
 
 (defn def-route [route]
@@ -63,7 +71,7 @@
         (try
           (serve-f context)
           (catch Throwable ex
-            (tap> [:wrn ::http-request-handlig-failed req ex])
+            (tap> [:err ::http-request-handlig-failed ex])
             {:status 500
              :body "Internal Server Error"}))))))
 
@@ -163,14 +171,14 @@
      routes)))
 
 
-(defn- wrappers-from-appmodel [context]
+(defn- wrappers-from-appmodel [app-db]
   (let [wrappers (appmodel/q!
                   '[:find ?wrapper-f
                     :where
                     [?r :routes-wrapper/wrapper-f ?wrapper-f]])]
     (map
      (fn [[wrapper-f]]
-       (wrapper-f context))
+       (wrapper-f app-db))
      wrappers)))
 
 
@@ -225,17 +233,20 @@
 
 
 (defn start!
-  [context]
-  (let [port (or (-> context :appconfig/config :http-server/port)
+  [app-db]
+  (let [port (or (-> app-db :appconfig/config :http-server/port)
                  3000)
         routes (-> []
                    (into (routes-from-appmodel))
                    (into (create-default-routes)))
         wrappers (-> []
-                     (into (wrappers-from-appmodel context)))]
+                     (into (wrappers-from-appmodel app-db)))]
     ;;(tap> [:dbg ::routes routes])
     (tap> [:inf ::start! {:port port}])
-    (http-kit/run-server (wrap-routes routes wrappers) {:port port})))
+    (http-kit/run-server (wrap-routes routes wrappers) {:port port})
+    app-db))
 
 
-
+(def-init-function
+  {:init-function/id ::start
+   :init-function/f start!})

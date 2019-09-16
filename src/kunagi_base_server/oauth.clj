@@ -114,10 +114,10 @@
    :route/req-perms []})
 
 
-(defn- oauth2-wrapper [context]
+(defn- oauth2-wrapper [app-db]
   (fn [routes]
-    (let [config (-> context :db :appconfig/config)
-          secrets (-> context :db :appconfig/secrets-f (apply []) :oauth)]
+    (let [config (-> app-db :appconfig/config)
+          secrets (-> app-db :appconfig/secrets-f (apply []) :oauth)]
       (ring-oauth/wrap-oauth2 routes (create-ring-oauth2-config config secrets)))))
 
 
