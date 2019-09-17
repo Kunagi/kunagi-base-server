@@ -5,6 +5,7 @@
 
    [kunagi-base.appmodel :refer [def-module]]
    [kunagi-base.context :as context]
+   [kunagi-base.event-sourcing.api :as es]
    [kunagi-base.cqrs.api :as cqrs]
    [kunagi-base.auth.users-db :as users-db]
    [kunagi-base-server.http-server :refer [def-route def-routes-wrapper]]
@@ -13,7 +14,8 @@
 
 
 (def-module
-  {:module/id ::server-oauth})
+  {:module/id ::server-oauth
+   :module/ident :server-oauth})
 
 
 (defn- user-id-by-oauth-google
@@ -87,18 +89,30 @@
 
 (defn serve-oauth-completed
   [context]
+  ;; (tap> [:!!! :oauth (-> context :http/request)])
   (let [request (-> context :http/request)
         access-tokens (-> request :session :ring.middleware.oauth2/access-tokens)
-        google (:google access-tokens)
-        access-token (:token google)
-        id-token (:id-token google)
+        service (-> access-tokens keys first)
+        tokens-map (get access-tokens service)
+        ;; token (:token tokens-map)
+        id-token (:id-token tokens-map)
         userinfo (decode-jwt id-token)]
+
+    ;; TODO use a command
+    (es/aggregate-events
+     [:auth/oauth-userinfos "sigleton"]
+     [
+      [:oauth-userinfo-received
+       {:service service
+        :userinfo userinfo}]])
+
     (let [user-id (authenticate
                    (context/from-http-request request)
-                   {:oauth {:service :google
+                   {:oauth {:service service
                             :sub (:sub userinfo)
                             :email (:email userinfo)
-                            :name (:name userinfo)}})]
+                            :name (:name userinfo)
+                            :picture (:picture userinfo)}})]
       (if user-id
         (tap> [:inf ::authenticated user-id])
         (tap> [:inf ::authentication-failed userinfo]))

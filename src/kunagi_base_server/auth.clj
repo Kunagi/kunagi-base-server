@@ -22,7 +22,8 @@
 
 
 (def-module
-  {:module/id ::server-auth})
+  {:module/id ::server-auth
+   :module/ident :server-auth})
 
 
 (def-route
