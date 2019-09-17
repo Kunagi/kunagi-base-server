@@ -14,7 +14,8 @@
 (defn- browserapp-config [req context]
   (-> {}
       (assoc :auth/user (auth/user--for-browserapp context))
-      (assoc :app/info (-> context :db :app/info))))
+      (assoc :app/info (-> context :db :app/info))
+      (assoc :browserapp/config (-> context :db :appconfig/config :browserapp/config))))
 
 
 (defn serve-app [context]
