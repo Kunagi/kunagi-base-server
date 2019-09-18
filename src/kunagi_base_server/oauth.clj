@@ -3,6 +3,8 @@
    [compojure.core :as compojure]
    [ring.middleware.oauth2 :as ring-oauth]
 
+   [kunagi-base.auth.api :as auth]
+   [kunagi-base.events :as events]
    [kunagi-base.appmodel :refer [def-module]]
    [kunagi-base.context :as context]
    [kunagi-base.event-sourcing.api :as es]
@@ -105,6 +107,16 @@
       [:oauth-userinfo-received
        {:service service
         :userinfo userinfo}]])
+
+    (let [!user-id (promise)]
+      (events/dispatch-event!
+       [:kunagi-base/command-triggered
+        [:auth/oauth-users "singleton"]
+        [:auth/sign-in-with-oauth {:service service
+                                   :userinfo userinfo
+                                   :user-id-promise !user-id}]]
+       (auth/authorize-context context)))
+      ;; TODO wait for promise
 
     (let [user-id (authenticate
                    (context/from-http-request request)
