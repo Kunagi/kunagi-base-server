@@ -102,7 +102,7 @@
 
     ;; TODO use a command
     (es/aggregate-events
-     [:auth/oauth-userinfos "sigleton"]
+     [:auth/oauth-userinfos "singleton"]
      [
       [:oauth-userinfo-received
        {:service service
@@ -115,22 +115,15 @@
         [:auth/sign-in-with-oauth {:service service
                                    :userinfo userinfo
                                    :user-id-promise !user-id}]]
-       (auth/authorize-context context)))
-      ;; TODO wait for promise
+       (auth/authorize-context context))
 
-    (let [user-id (authenticate
-                   (context/from-http-request request)
-                   {:oauth {:service service
-                            :sub (:sub userinfo)
-                            :email (:email userinfo)
-                            :name (:name userinfo)
-                            :picture (:picture userinfo)}})]
-      (if user-id
-        (tap> [:inf ::authenticated user-id])
-        (tap> [:inf ::authentication-failed userinfo]))
-      {:session {:auth/user-id user-id}
-       :status 303
-       :headers {"Location" "/"}})))
+      (let [user-id @!user-id]
+        (if user-id
+          (tap> [:inf ::authenticated user-id])
+          (tap> [:inf ::authentication-failed userinfo]))
+        {:session {:auth/user-id user-id}
+         :status 303
+         :headers {"Location" "/"}}))))
 
 
 (def-route
