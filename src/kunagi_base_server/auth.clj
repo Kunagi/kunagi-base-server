@@ -27,7 +27,7 @@
   (when-let [user-id (-> context :auth/user-id)]
     (let [user-name user-id]
       (-> {:user/id user-id
-           :user/user-perms (-> context :auth/user-perms)}
+           :user/perms (-> context :auth/user-perms)}
           (complete-user-for-browserapp-by-oauth-userinfos context)))))
 
 
