@@ -207,7 +207,7 @@
 
 
 (defn- on-event-received [event context]
-  (events/dispatch-event! event context))
+  (events/dispatch-event! context event))
 
 
 (defn- respond-to-client [send-fn sente-user-id event]

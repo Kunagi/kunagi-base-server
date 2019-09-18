@@ -98,24 +98,25 @@
         tokens-map (get access-tokens service)
         ;; token (:token tokens-map)
         id-token (:id-token tokens-map)
-        userinfo (decode-jwt id-token)]
+        userinfo (decode-jwt id-token)
+        context (auth/authorize-context context)]
 
-    ;; TODO use a command
-    (es/aggregate-events
-     [:auth/oauth-userinfos "singleton"]
-     [
-      [:oauth-userinfo-received
-       {:service service
-        :userinfo userinfo}]])
+    ;; TODO fire app event and trigger command by policy
+    (events/dispatch-event!
+     context
+     [:kunagi-base/command-triggered
+      [:auth/oauth-userinfos "singleton"]
+      [:auth/process-userinfo {:service service
+                               :userinfo userinfo}]])
 
     (let [!user-id (promise)]
       (events/dispatch-event!
+       context
        [:kunagi-base/command-triggered
         [:auth/oauth-users "singleton"]
         [:auth/sign-in-with-oauth {:service service
                                    :userinfo userinfo
-                                   :user-id-promise !user-id}]]
-       (auth/authorize-context context))
+                                   :user-id-promise !user-id}]])
 
       (let [user-id @!user-id]
         (if user-id
