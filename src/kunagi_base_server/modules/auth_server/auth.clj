@@ -1,4 +1,4 @@
-(ns kunagi-base-server.auth
+(ns kunagi-base-server.modules.auth-server.auth
   (:require
    [compojure.core :as compojure]
 
@@ -31,19 +31,9 @@
           (complete-user-for-browserapp-by-oauth-userinfos context)))))
 
 
-(defn- serve-sign-out [context]
+(defn serve-sign-out [context]
   {:session nil
    :status 303
    :headers {"Location" "/"}})
 
 
-(def-module
-  {:module/id ::server-auth})
-
-
-(def-route
-  {:route/id ::sign-out
-   :route/module [:module/ident :server-auth]
-   :route/path "/sign-out"
-   :route/serve-f serve-sign-out
-   :route/req-perms []})

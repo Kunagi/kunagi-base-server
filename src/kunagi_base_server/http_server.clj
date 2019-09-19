@@ -11,15 +11,15 @@
    [compojure.core :as compojure]
    [compojure.route :as compojure-route]
 
-   [kunagi-base.utils :as utils]
-   [kunagi-base.appmodel :as am :refer [def-extension def-module]]
    [kunagi-base.modules.events.api :as events]
    [kunagi-base.modules.startup :refer [def-init-function]]
+
+   [kunagi-base.utils :as utils]
+   [kunagi-base.appmodel :as am :refer [def-extension def-module]]
+   [kunagi-base.context :as context]
    [kunagi-base.auth.api :as auth]
    [kunagi-base.cqrs.api :as cqrs]
-   [kunagi-base.assets :as assets]
-
-   [kunagi-base.context :as context]))
+   [kunagi-base.assets :as assets]))
 
 
 (s/def ::route-path string?)

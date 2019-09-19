@@ -7,7 +7,7 @@
    [kunagi-base.context :as context]
    [kunagi-base.appmodel :refer [def-module]]
 
-   [kunagi-base-server.auth :as auth]
+   [kunagi-base-server.modules.auth-server.auth :as auth]
    [kunagi-base-server.http-server :refer [def-route]]))
 
 

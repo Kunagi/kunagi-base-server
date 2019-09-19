@@ -1,43 +1,15 @@
-(ns kunagi-base-server.oauth
+(ns kunagi-base-server.modules.auth-server.oauth2
   (:require
    [compojure.core :as compojure]
    [ring.middleware.oauth2 :as ring-oauth]
 
    [kunagi-base.auth.api :as auth]
    [kunagi-base.modules.events.api :as events]
-   [kunagi-base.appmodel :refer [def-module]]
    [kunagi-base.context :as context]
-   [kunagi-base.event-sourcing.api :as es]
-   [kunagi-base.cqrs.api :as cqrs]
-   [kunagi-base.auth.users-db :as users-db]
-   [kunagi-base-server.http-server :refer [def-route def-routes-wrapper]]
-
-   [kunagi-base-server.oauth]))
+   [kunagi-base.event-sourcing.api :as es]))
 
 
-(def-module
-  {:module/id ::server-oauth})
-
-
-(defn- user-id-by-oauth-google
-  [context {:keys [email]}]
-  (when-let [users-db (-> context :db :auth/users-db)]
-    (users-db/user-id-by-google-email users-db email)))
-
-
-(defn- user-id-by-oauth
-  [context auth-info]
-  (case (-> auth-info :service)
-    :google (user-id-by-oauth-google context auth-info)))
-
-
-(defn- authenticate
-  [context auth-info]
-  (tap> [:dbg ::authenticate auth-info])
-  (user-id-by-oauth context (-> auth-info :oauth)))
-
-
-(defn create-base-config
+(defn- create-base-config
   [config secrets provider-key provider-specific-config]
   (let [users-config (get-in config [:http-server/oauth provider-key])]
     (if (:enabled? users-config)
@@ -55,7 +27,7 @@
               (merge secrets)))))))
 
 
-(defn create-google-config [config secrets]
+(defn- create-google-config [config secrets]
   (create-base-config
    config
    secrets
@@ -71,7 +43,7 @@
     (cond-> {} google (assoc :google google))))
 
 
-(defn- decode-jwt
+(defn decode-jwt
   [token]
   (let [decoder (com.auth0.jwt.JWT/decode token)
         claims (.getClaims decoder)
@@ -97,6 +69,7 @@
         tokens-map (get access-tokens service)
         ;; token (:token tokens-map)
         id-token (:id-token tokens-map)
+        ;; TODO id-token may be nil -> just redirect
         userinfo (decode-jwt id-token)
         context (auth/authorize-context context)]
 
@@ -115,7 +88,7 @@
         [:auth/oauth-users "singleton"]
         [:auth/sign-in-with-oauth {:service service
                                    :userinfo userinfo
-                                   :user-id-promise !user-id}]])
+                                   :return-user-id-f #(deliver !user-id %)}]])
 
       (let [user-id @!user-id]
         (if user-id
@@ -126,28 +99,10 @@
          :headers {"Location" "/"}}))))
 
 
-(def-route
-  {:route/id ::oauth-completed
-   :route/module [:module/ident :server-oauth]
-   :module/ident :server-oauth
-   :route/path "/oauth/completed"
-   :route/serve-f serve-oauth-completed
-   :route/req-perms []})
-
-
-(defn- oauth2-wrapper [app-db]
+(defn oauth2-wrapper [app-db]
   (fn [routes]
     (let [config (-> app-db :appconfig/config)
           secrets (-> app-db :appconfig/secrets-f (apply []) :oauth)]
       (ring-oauth/wrap-oauth2 routes (create-ring-oauth2-config config secrets)))))
 
 
-(def-routes-wrapper
-  {:routes-wrapper/id ::oauth2
-   :routes-wrapper/module [:module/ident :server-oauth]
-   :routes-wrapper/wrapper-f oauth2-wrapper})
-
-
-(defn wrappers []
-  [(fn [routes]
-     (oauth2-wrapper))])
