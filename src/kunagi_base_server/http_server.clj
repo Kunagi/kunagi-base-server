@@ -11,7 +11,8 @@
    [compojure.core :as compojure]
    [compojure.route :as compojure-route]
 
-   [kunagi-base.appmodel :as appmodel :refer [def-extension def-module]]
+   [kunagi-base.utils :as utils]
+   [kunagi-base.appmodel :as am :refer [def-extension def-module]]
    [kunagi-base.events :as events]
    [kunagi-base.startup :refer [def-init-function]]
    [kunagi-base.auth.api :as auth]
@@ -38,15 +39,22 @@
             :routes-wrapper/module {:db/type :db.type/ref}}})
 
 
-
 (defn def-route [route]
-  (appmodel/register-entity
+  (utils/assert-entity
+   route
+   {:req {:route/module ::am/entity-ref}}
+   (str "Invalid route " (-> route :route/id) "."))
+  (am/register-entity
    :route
    route))
 
 
 (defn def-routes-wrapper [routes-wrapper]
-  (appmodel/register-entity
+  (utils/assert-entity
+   routes-wrapper
+   {:req {:routes-wrapper/module ::am/entity-ref}}
+   (str "Invalid routes-wrapper " (-> routes-wrapper :routes-wrapper/id) "."))
+  (am/register-entity
    :routes-wrapper
    routes-wrapper))
 
@@ -159,7 +167,7 @@
 
 
 (defn- routes-from-appmodel []
-  (let [routes (appmodel/q!
+  (let [routes (am/q!
                 '[:find ?path ?serve-f ?req-perms
                   :where
                   [?r :route/path ?path]
@@ -175,7 +183,7 @@
 
 
 (defn- wrappers-from-appmodel [app-db]
-  (let [wrappers (appmodel/q!
+  (let [wrappers (am/q!
                   '[:find ?wrapper-f
                     :where
                     [?r :routes-wrapper/wrapper-f ?wrapper-f]])]
@@ -333,4 +341,5 @@
 
 (def-init-function
   {:init-function/id ::start
+   :init-function/module [:module/ident :http-server]
    :init-function/f start!})

@@ -16,8 +16,7 @@
 
 
 (def-module
-  {:module/id ::server-oauth
-   :module/ident :server-oauth})
+  {:module/id ::server-oauth})
 
 
 (defn- user-id-by-oauth-google
@@ -129,6 +128,8 @@
 
 (def-route
   {:route/id ::oauth-completed
+   :route/module [:module/ident :server-oauth]
+   :module/ident :server-oauth
    :route/path "/oauth/completed"
    :route/serve-f serve-oauth-completed
    :route/req-perms []})
@@ -143,6 +144,7 @@
 
 (def-routes-wrapper
   {:routes-wrapper/id ::oauth2
+   :routes-wrapper/module [:module/ident :server-oauth]
    :routes-wrapper/wrapper-f oauth2-wrapper})
 
 

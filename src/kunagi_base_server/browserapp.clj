@@ -38,18 +38,21 @@
 
 (def-route
   {:route/id ::root-redirect
+   :route/module [:module/ident :browserapp]
    :route/path "/"
    :route/serve-f serve-redirect-to-app
    :route/req-perms []})
 
 (def-route
   {:route/id ::ui-redirect
+   :route/module [:module/ident :browserapp]
    :route/path "/ui"
    :route/serve-f serve-redirect-to-app
    :route/req-perms []})
 
 (def-route
   {:route/id ::app
+   :route/module [:module/ident :browserapp]
    :route/path "/ui/**"
    :route/serve-f serve-app
    :route/req-perms []})

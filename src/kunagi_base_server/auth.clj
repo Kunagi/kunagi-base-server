@@ -38,12 +38,12 @@
 
 
 (def-module
-  {:module/id ::server-auth
-   :module/ident :server-auth})
+  {:module/id ::server-auth})
 
 
 (def-route
   {:route/id ::sign-out
+   :route/module [:module/ident :server-auth]
    :route/path "/sign-out"
    :route/serve-f serve-sign-out
    :route/req-perms []})
