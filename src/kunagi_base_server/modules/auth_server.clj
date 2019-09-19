@@ -2,7 +2,7 @@
   (:require
    [kunagi-base.appmodel :refer [def-module def-extension]]
 
-   [kunagi-base-server.http-server :refer [def-route def-routes-wrapper]]
+   [kunagi-base-server.modules.http-server :refer [def-route def-routes-wrapper]]
    [kunagi-base-server.modules.auth-server.auth :as auth]
    [kunagi-base-server.modules.auth-server.oauth2 :as oauth2]))
 

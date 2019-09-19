@@ -6,7 +6,7 @@
 
    [kunagi-base.event-sourcing.api :as es]
    [kunagi-base.appmodel :refer [def-module]]
-   [kunagi-base-server.http-server :refer [def-route]]))
+   [kunagi-base-server.modules.http-server :refer [def-route]]))
 
 
 (defn complete-user-for-browserapp-by-oauth-userinfos [user context]
