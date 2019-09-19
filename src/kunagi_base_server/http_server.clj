@@ -13,8 +13,8 @@
 
    [kunagi-base.utils :as utils]
    [kunagi-base.appmodel :as am :refer [def-extension def-module]]
-   [kunagi-base.events :as events]
-   [kunagi-base.startup :refer [def-init-function]]
+   [kunagi-base.modules.events.api :as events]
+   [kunagi-base.modules.startup :refer [def-init-function]]
    [kunagi-base.auth.api :as auth]
    [kunagi-base.cqrs.api :as cqrs]
    [kunagi-base.assets :as assets]

@@ -4,7 +4,7 @@
    [ring.middleware.oauth2 :as ring-oauth]
 
    [kunagi-base.auth.api :as auth]
-   [kunagi-base.events :as events]
+   [kunagi-base.modules.events.api :as events]
    [kunagi-base.appmodel :refer [def-module]]
    [kunagi-base.context :as context]
    [kunagi-base.event-sourcing.api :as es]
