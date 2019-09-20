@@ -1,6 +1,6 @@
 (ns kunagi-base-server.modules.auth-server
   (:require
-   [kunagi-base.appmodel :refer [def-module def-extension]]
+   [kunagi-base.appmodel :refer [def-module]]
 
    [kunagi-base-server.modules.http-server :refer [def-route def-routes-wrapper]]
    [kunagi-base-server.modules.auth-server.auth :as auth]

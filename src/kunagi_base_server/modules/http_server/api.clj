@@ -15,7 +15,7 @@
    [kunagi-base.modules.startup :refer [def-init-function]]
 
    [kunagi-base.utils :as utils]
-   [kunagi-base.appmodel :as am :refer [def-extension def-module]]
+   [kunagi-base.appmodel :as am]
    [kunagi-base.context :as context]
    [kunagi-base.auth.api :as auth]
    [kunagi-base.cqrs.api :as cqrs]
