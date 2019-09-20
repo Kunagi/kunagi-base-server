@@ -4,7 +4,7 @@
    [kunagi-base.utils :as utils]
    [kunagi-base.appmodel :as am :refer [def-module def-entity-model]]
 
-   [kunagi-base.modules.startup :refer [def-init-function]]
+   [kunagi-base.modules.startup.model :refer [def-init-function]]
    [kunagi-base-server.modules.http-server.api :as impl]))
 
 
