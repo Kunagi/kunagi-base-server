@@ -17,9 +17,7 @@
 
 (def-entity-model
   :http-server ::route
-  {:route/path {:req? true
-                :unique-identity? true
-                :spec string?}
+  {:route/path {:uid? true :spec string?}
    :route/serve-f {:req? true :spec fn?}
    :route/req-perms {:spec (s/coll-of qualified-keyword?)}})
 
