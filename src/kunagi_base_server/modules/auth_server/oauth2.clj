@@ -6,7 +6,7 @@
    [kunagi-base.auth.api :as auth]
    [kunagi-base.modules.events.api :as events]
    [kunagi-base.context :as context]
-   [kunagi-base.event-sourcing.api :as es]))
+   [kunagi-base.modules.event-sourcing.api :as es]))
 
 
 (defn- create-base-config

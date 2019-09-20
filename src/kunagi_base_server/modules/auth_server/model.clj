@@ -1,8 +1,8 @@
-(ns kunagi-base-server.modules.auth-server
+(ns kunagi-base-server.modules.auth-server.model
   (:require
    [kunagi-base.appmodel :refer [def-module]]
 
-   [kunagi-base-server.modules.http-server :refer [def-route def-routes-wrapper]]
+   [kunagi-base-server.modules.http-server.model :refer [def-route def-routes-wrapper]]
    [kunagi-base-server.modules.auth-server.auth :as auth]
    [kunagi-base-server.modules.auth-server.oauth2 :as oauth2]))
 

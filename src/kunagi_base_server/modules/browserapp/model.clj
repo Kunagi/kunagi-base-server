@@ -1,8 +1,8 @@
-(ns kunagi-base-server.modules.browserapp
+(ns kunagi-base-server.modules.browserapp.model
   (:require
    [kunagi-base.appmodel :refer [def-module]]
 
-   [kunagi-base-server.modules.http-server :refer [def-route]]
+   [kunagi-base-server.modules.http-server.model :refer [def-route]]
    [kunagi-base-server.modules.browserapp.api :as impl]))
 
 

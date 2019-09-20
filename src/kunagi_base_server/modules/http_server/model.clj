@@ -1,4 +1,4 @@
-(ns kunagi-base-server.modules.http-server
+(ns kunagi-base-server.modules.http-server.model
   (:require
    [clojure.spec.alpha :as s]
    [kunagi-base.utils :as utils]
