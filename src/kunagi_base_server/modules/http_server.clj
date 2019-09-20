@@ -1,7 +1,8 @@
 (ns kunagi-base-server.modules.http-server
   (:require
+   [clojure.spec.alpha :as s]
    [kunagi-base.utils :as utils]
-   [kunagi-base.appmodel :as am :refer [def-module def-extension]]
+   [kunagi-base.appmodel :as am :refer [def-module def-entity-model]]
 
    [kunagi-base.modules.startup :refer [def-init-function]]
    [kunagi-base-server.modules.http-server.api :as impl]))
@@ -11,9 +12,16 @@
   {:module/id ::http-server})
 
 
-(def-extension
-  {:schema {:route/module {:db/type :db.type/ref}
-            :routes-wrapper/module {:db/type :db.type/ref}}})
+;;; route
+
+
+(def-entity-model
+  :http-server ::route
+  {:route/path {:req? true
+                :unique-identity? true
+                :spec string?}
+   :route/serve-f {:req? true :spec fn?}
+   :route/req-perms {:spec (s/coll-of qualified-keyword?)}})
 
 
 (defn def-route [route]
@@ -26,6 +34,14 @@
    route))
 
 
+;;; routes-wrapper
+
+
+(def-entity-model
+  :http-server ::routes-wrapper
+  {:routes-wrapper/wrapper-f {:req? true :spec fn?}})
+
+
 (defn def-routes-wrapper [routes-wrapper]
   (utils/assert-entity
    routes-wrapper
@@ -34,6 +50,9 @@
   (am/register-entity
    :routes-wrapper
    routes-wrapper))
+
+
+;;;
 
 
 (def-init-function
