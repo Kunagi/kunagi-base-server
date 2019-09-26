@@ -18,7 +18,7 @@
    [kunagi-base.context :as context]
    [kunagi-base.auth.api :as auth]
    [kunagi-base.cqrs.api :as cqrs]
-   [kunagi-base.modules.assets.api :as assets]))
+   [kunagi-base-server.modules.assets.api :as assets]))
 
 
 (s/def ::route-path string?)

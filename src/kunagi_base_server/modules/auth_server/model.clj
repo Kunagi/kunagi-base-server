@@ -21,7 +21,6 @@
 (def-route
   {:route/id ::oauth-completed
    :route/module [:module/ident :auth-server]
-   :module/ident :server-oauth
    :route/path "/oauth/completed"
    :route/serve-f oauth2/serve-oauth-completed
    :route/req-perms []})
