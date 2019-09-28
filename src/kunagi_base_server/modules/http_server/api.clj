@@ -3,6 +3,10 @@
    [clojure.spec.alpha :as s]
    [ring.middleware.defaults :as ring-defaults]
    [ring.middleware.params :as ring-params]
+   [ring.middleware.file :as ring-file]
+   [ring.middleware.resource :as ring-resource]
+   [ring.middleware.content-type :as ring-content-type]
+   [ring.middleware.not-modified :as ring-not-modified]
    [ring.util.response :as ring-resp]
    [ring.util.mime-type :as ring-mime]
    [org.httpkit.server :as http-kit]
@@ -263,8 +267,8 @@
    (compojure/GET  "/chsk" [] (fn [req] ((:ajax-get-or-ws-handshake-fn (sente-socket)) req)))
    (compojure/POST "/chsk" [] serve-sente-post)
 
-   (compojure-route/files "/"        {:root "target/public"}) ;; TODO remove in prod
-   (compojure-route/resources "/"    {:root "public"})
+   ;; (compojure-route/files "/"        {:root "public-web-resources"})
+   ;; (compojure-route/resources "/"    {:root "public"})
    (compojure-route/not-found        "404 - Page not found")])
 
 
@@ -297,7 +301,12 @@
 
       (ring-defaults/wrap-defaults
        (-> ring-defaults/site-defaults
-           (assoc-in [:session :cookie-attrs :same-site] :lax)))))
+           (assoc-in [:session :cookie-attrs :same-site] :lax)))
+
+      (ring-file/wrap-file "public-web-resources")
+      (ring-resource/wrap-resource "public")
+      (ring-content-type/wrap-content-type)
+      (ring-not-modified/wrap-not-modified)))
 
 
 (defn start!
