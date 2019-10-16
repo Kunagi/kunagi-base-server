@@ -292,21 +292,34 @@
 
 (defn- wrap-routes [routes wrappers]
 
-  (-> compojure/routes
-      (apply routes)
+  (cond->
+    compojure/routes
 
-      (apply-wrappers wrappers)
+    true
+    (apply routes)
 
-      (ring-params/wrap-params)
+    true
+    (apply-wrappers wrappers)
 
-      (ring-defaults/wrap-defaults
-       (-> ring-defaults/site-defaults
-           (assoc-in [:session :cookie-attrs :same-site] :lax)))
+    true
+    (ring-params/wrap-params)
 
-      (ring-file/wrap-file "public-web-resources")
-      (ring-resource/wrap-resource "public")
-      (ring-content-type/wrap-content-type)
-      (ring-not-modified/wrap-not-modified)))
+    true
+    (ring-defaults/wrap-defaults
+     (-> ring-defaults/site-defaults
+         (assoc-in [:session :cookie-attrs :same-site] :lax)))
+
+    (-> "public-web-resources" java.io.File. .exists)
+    (ring-file/wrap-file "public-web-resources")
+
+    true
+    (ring-resource/wrap-resource "public")
+
+    true
+    (ring-content-type/wrap-content-type)
+
+    true
+    (ring-not-modified/wrap-not-modified)))
 
 
 (defn start!
