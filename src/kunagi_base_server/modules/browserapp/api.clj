@@ -16,7 +16,7 @@
   (let [app-info (-> context :db :app/info)]
     (htmlgen/page-html
      (-> context :http/request)
-     {:modules [:browserapp]
+     {:modules [:browserapp :manifest-json]
       :browserapp-config-f #(browserapp-config % context)
       :js-build-name (-> context :db :appconfig/config :browserapp/js-build-name)
       :browserapp-name (-> app-info :app-name)
