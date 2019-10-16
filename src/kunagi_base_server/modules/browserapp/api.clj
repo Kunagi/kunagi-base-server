@@ -13,14 +13,22 @@
 
 
 (defn serve-app [context]
-  (let [app-info (-> context :db :app/info)]
+  (let [app-info (-> context :db :app/info)
+        config (-> context :db :appconfig/config)
+        google-analytics-tracking-id (-> config :google-analytics/tracking-id)]
     (htmlgen/page-html
      (-> context :http/request)
-     {:modules [:browserapp :manifest-json]
+     {:modules (cond->
+                   [:browserapp :manifest-json]
+
+                 google-analytics-tracking-id
+                 (conj :google-analytics))
+
       :browserapp-config-f #(browserapp-config % context)
       :js-build-name (-> context :db :appconfig/config :browserapp/js-build-name)
       :browserapp-name (-> app-info :app-name)
-      :title (-> app-info :app-label)})))
+      :title (-> app-info :app-label)
+      :google-analytics-tracking-id google-analytics-tracking-id})))
 
 
 (defn serve-redirect-to-app [context]
