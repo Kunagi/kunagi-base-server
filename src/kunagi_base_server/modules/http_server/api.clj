@@ -290,36 +290,39 @@
    wrappers))
 
 
-(defn- wrap-routes [routes wrappers]
+(defn- wrap-routes [routes wrappers app-db]
+  (let [config (-> app-db :appconfig/config)
+        http-session? (if (contains? config :http-server/http-session?)
+                        (-> config :http-server/http-session?)
+                        true)]
+    (cond->
+      compojure/routes
 
-  (cond->
-    compojure/routes
+      true
+      (apply routes)
 
-    true
-    (apply routes)
+      true
+      (apply-wrappers wrappers)
 
-    true
-    (apply-wrappers wrappers)
+      true
+      (ring-params/wrap-params)
 
-    true
-    (ring-params/wrap-params)
+      http-session?
+      (ring-defaults/wrap-defaults
+       (-> ring-defaults/site-defaults
+           (assoc-in [:session :cookie-attrs :same-site] :lax)))
 
-    true
-    (ring-defaults/wrap-defaults
-     (-> ring-defaults/site-defaults
-         (assoc-in [:session :cookie-attrs :same-site] :lax)))
+      (-> "public-web-resources" java.io.File. .exists)
+      (ring-file/wrap-file "public-web-resources")
 
-    (-> "public-web-resources" java.io.File. .exists)
-    (ring-file/wrap-file "public-web-resources")
+      true
+      (ring-resource/wrap-resource "public")
 
-    true
-    (ring-resource/wrap-resource "public")
+      true
+      (ring-content-type/wrap-content-type)
 
-    true
-    (ring-content-type/wrap-content-type)
-
-    true
-    (ring-not-modified/wrap-not-modified)))
+      true
+      (ring-not-modified/wrap-not-modified))))
 
 
 (defn start!
@@ -333,7 +336,9 @@
                      (into (wrappers-from-appmodel app-db)))]
     ;;(tap> [:dbg ::routes routes])
     (tap> [:inf ::start! {:port port}])
-    (http-kit/run-server (wrap-routes routes wrappers) {:port port})
+    (http-kit/run-server
+     (wrap-routes routes wrappers app-db)
+     {:port port})
     app-db))
 
 
