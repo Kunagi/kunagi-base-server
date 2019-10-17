@@ -15,7 +15,12 @@
 (defn serve-app [context]
   (let [app-info (-> context :db :app/info)
         config (-> context :db :appconfig/config)
-        google-analytics-tracking-id (-> config :google-analytics/tracking-id)]
+        google-analytics-tracking-id (-> config :google-analytics/tracking-id)
+        cookie-consent-script-url (-> config :browserapp/cookie-consent-script-url)
+        head-contents []
+        head-contents (if cookie-consent-script-url
+                        (conj head-contents [:script {:src cookie-consent-script-url}])
+                        head-contents)]
     (htmlgen/page-html
      (-> context :http/request)
      {:modules (cond->
@@ -23,7 +28,7 @@
 
                  google-analytics-tracking-id
                  (conj :google-analytics))
-
+      :head-contents head-contents
       :browserapp-config-f #(browserapp-config % context)
       :js-build-name (-> context :db :appconfig/config :browserapp/js-build-name)
       :browserapp-name (-> app-info :app-name)
