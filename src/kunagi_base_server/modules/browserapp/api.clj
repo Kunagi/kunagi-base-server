@@ -7,9 +7,9 @@
 
 (defn- browserapp-config [req context]
   (-> {}
+      (merge (-> context :db :appconfig/config :browserapp/config))
       (assoc :auth/user (auth/user--for-browserapp context))
-      (assoc :app/info (-> context :db :app/info))
-      (assoc :browserapp/config (-> context :db :appconfig/config :browserapp/config))))
+      (assoc :app/info (-> context :db :app/info))))
 
 
 (defn serve-app [context]
@@ -23,11 +23,7 @@
                         head-contents)]
     (htmlgen/page-html
      (-> context :http/request)
-     {:modules (cond->
-                   [:browserapp :manifest-json]
-
-                 google-analytics-tracking-id
-                 (conj :google-analytics))
+     {:modules [:browserapp :manifest-json]
       :head-contents head-contents
       :browserapp-config-f #(browserapp-config % context)
       :js-build-name (-> context :db :appconfig/config :browserapp/js-build-name)
