@@ -20,10 +20,14 @@
         head-contents []
         head-contents (if cookie-consent-script-url
                         (conj head-contents [:script {:src cookie-consent-script-url}])
-                        head-contents)]
+                        head-contents)
+        error-alert? (-> config :browserapp/error-alert?)
+        modules (cond-> [:browserapp :manifest-json]
+                  error-alert? (conj :error-alert))]
+
     (htmlgen/page-html
      (-> context :http/request)
-     {:modules [:browserapp :manifest-json]
+     {:modules modules
       :head-contents head-contents
       :browserapp-config-f #(browserapp-config % context)
       :js-build-name (-> context :db :appconfig/config :browserapp/js-build-name)
