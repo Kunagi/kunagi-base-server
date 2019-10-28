@@ -21,6 +21,14 @@
         head-contents (if cookie-consent-script-url
                         (conj head-contents [:script {:src cookie-consent-script-url}])
                         head-contents)
+        favicon? (if (contains? config :browserapp/favicon?)
+                   (-> config :browserapp/favicon?)
+                   true)
+        head-contents (if favicon?
+                        (conj head-contents [:link {:rel "icon"
+                                                    :type "image/png"
+                                                    :href "/favicon.png"}])
+                        head-contents)
         error-alert? (-> config :browserapp/error-alert?)
         modules (cond-> [:browserapp :manifest-json]
                   error-alert? (conj :error-alert))]
