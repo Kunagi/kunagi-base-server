@@ -318,6 +318,9 @@
       true
       (ring-resource/wrap-resource "public")
 
+      (-> "target/public" java.io.File. .exists)
+      (ring-file/wrap-file "target/public")
+
       true
       (ring-content-type/wrap-content-type)
 
