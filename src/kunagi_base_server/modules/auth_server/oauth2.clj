@@ -90,7 +90,9 @@
                                    :userinfo userinfo
                                    :return-user-id-f #(deliver !user-id %)}]])
 
+      ;;(tap> [:!!! ::waiting-for-user-id])
       (let [user-id @!user-id]
+        ;;(tap> [:!!! ::user-id-received user-id])
         (if user-id
           (tap> [:inf ::authenticated user-id])
           (tap> [:inf ::authentication-failed userinfo]))
