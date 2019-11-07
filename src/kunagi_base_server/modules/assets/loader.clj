@@ -19,6 +19,7 @@
 
 (defn default-load-f [db asset-pool asset-path]
   (update-dir! asset-pool)
+  (tap> [:dbg ::default-load-f asset-pool asset-path])
   (let [dir-path (-> asset-pool :asset-pool/dir-path)
         git-repo? (-> asset-pool :asset-pool/git-repo?)
         file-path (str dir-path "/" asset-path)

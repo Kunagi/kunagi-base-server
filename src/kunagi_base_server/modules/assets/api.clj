@@ -1,10 +1,16 @@
 (ns kunagi-base-server.modules.assets.api
   (:require
+   [clojure.spec.alpha :as s]
+
    [facts-db.api :as db]
    [kunagi-base.utils :as utils]
    [kunagi-base.auth.api :as auth]
    [kunagi-base.appmodel :as am :refer [def-module]]
    [kunagi-base-server.modules.assets.loader :as loader]))
+
+
+(s/def ::asset-pool-ident qualified-keyword?)
+(s/def ::asset-path string?)
 
 
 (defn- load-asset
@@ -36,6 +42,8 @@
 
 
 (defn asset-for-output [asset-pool-ident asset-path context]
+  (utils/assert-spec ::asset-pool-ident asset-pool-ident ::asset-for-output)
+  (utils/assert-spec ::asset-path asset-path ::asset-for-output)
   (let [asset-pool (am/entity! [:asset-pool/ident asset-pool-ident])
         req-perms (-> asset-pool :asset-pool/req-perms)]
     (if-not (auth/context-has-permissions? context req-perms)
