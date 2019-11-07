@@ -7,6 +7,7 @@
    [ring.middleware.resource :as ring-resource]
    [ring.middleware.content-type :as ring-content-type]
    [ring.middleware.not-modified :as ring-not-modified]
+   [ring.middleware.reload :as ring-reload]
    [ring.util.response :as ring-resp]
    [ring.util.mime-type :as ring-mime]
    [org.httpkit.server :as http-kit]
@@ -129,9 +130,9 @@
 
 (defn- serve-asset [context]
   (if-let [edn (-> context :http/request :params :edn)]
-    (let [path (read-string edn)]
+    (let [[asset-pool-ident asset-path] (read-string edn)]
       (try
-        (let [asset (assets/asset-for-output path context)]
+        (let [asset (assets/asset-for-output asset-pool-ident asset-path context)]
           (if (instance? java.io.File asset)
             (serve-file asset context)
             (-> asset
@@ -294,7 +295,10 @@
   (let [config (-> app-db :appconfig/config)
         http-session? (if (contains? config :http-server/http-session?)
                         (-> config :http-server/http-session?)
-                        true)]
+                        true)
+        reload? (-> app-db :appconfig/config :http-server/reload?)
+        reload-dirs (into ["src"]
+                          (-> config :http-server/reload-dirs))]
     (cond->
       compojure/routes
 
@@ -303,6 +307,9 @@
 
       true
       (apply-wrappers wrappers)
+
+      reload?
+      (ring-reload/wrap-reload {:dirs reload-dirs})
 
       true
       (ring-params/wrap-params)
