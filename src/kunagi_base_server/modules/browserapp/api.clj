@@ -15,6 +15,7 @@
 (defn serve-app [context]
   (let [app-info (-> context :db :app/info)
         config (-> context :db :appconfig/config)
+        lang (or (-> config :browserapp/lang) "en")
         google-analytics-tracking-id (-> config :google-analytics/tracking-id)
         cookie-consent-script-url (-> config :browserapp/cookie-consent-script-url)
         head-contents []
@@ -36,6 +37,7 @@
     (htmlgen/page-html
      (-> context :http/request)
      {:modules modules
+      :lang lang
       :head-contents head-contents
       :browserapp-config-f #(browserapp-config % context)
       :js-build-name (-> context :db :appconfig/config :browserapp/js-build-name)
