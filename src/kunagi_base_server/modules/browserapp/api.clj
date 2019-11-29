@@ -9,7 +9,7 @@
   (-> {}
       (merge (-> context :db :appconfig/config :browserapp/config))
       (assoc :auth/user (auth/user--for-browserapp context))
-      (assoc :app/info (-> context :db :app/info))))
+      (assoc :serverapp/info (-> context :db :app/info))))
 
 
 (defn serve-app [context]
