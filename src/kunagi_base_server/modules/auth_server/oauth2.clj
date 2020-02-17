@@ -1,18 +1,15 @@
 (ns kunagi-base-server.modules.auth-server.oauth2
   (:require
-   [compojure.core :as compojure]
    [ring.middleware.oauth2 :as ring-oauth]
 
    [kunagi-base.auth.api :as auth]
-   [kunagi-base.modules.events.api :as events]
-   [kunagi-base.context :as context]
-   [kunagi-base.modules.event-sourcing.api :as es]))
+   [kunagi-base.modules.events.api :as events]))
 
 
 (defn- create-base-config
   [config secrets provider-key provider-specific-config]
   (let [users-config (get-in config [:http-server/oauth provider-key])]
-    (if (:enabled? users-config)
+    (when (:enabled? users-config)
       (let [own-uri (get-in config [:http-server/uri])
             prefix (or own-uri "")
             secrets (get-in secrets [provider-key])]
