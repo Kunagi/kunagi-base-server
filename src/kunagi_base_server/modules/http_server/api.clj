@@ -189,10 +189,10 @@
         new-ids (:any new-val)
         connected-ids (remove old-ids new-ids)
         disconnected-ids (remove new-ids old-ids)]
-    (doseq [client-id connected-ids])
-      ;;(tap> [:!!! ::connected client-id]))
-    (doseq [client-id disconnected-ids])))
-      ;;(tap> [:!!! ::disconnected client-id]))))
+    (doseq [client-id connected-ids]
+      (tap> [:dbg ::connected client-id]))
+    (doseq [client-id disconnected-ids]
+      (tap> [:dbg ::disconnected client-id]))))
 
 
 (defn- on-event-received [event context]
