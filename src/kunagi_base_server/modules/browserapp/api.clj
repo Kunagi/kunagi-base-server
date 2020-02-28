@@ -19,9 +19,23 @@
         lang (or (-> config :browserapp/lang) "en")
         ;; google-analytics-tracking-id (-> config :google-analytics/tracking-id)
         cookie-consent-script-url (-> config :browserapp/cookie-consent-script-url)
+        standalone? (-> app-info :browserapp :standalone?)
         head-contents []
         head-contents (if cookie-consent-script-url
                         (conj head-contents [:script {:src cookie-consent-script-url}])
+                        head-contents)
+        head-contents (if-let [google-adsense-code (-> config :browserapp/google-adsense-code)]
+                        (conj head-contents [:script
+                                             {:data-ad-client google-adsense-code
+                                              :async true
+                                              :src "https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"}])
+                        head-contents)
+        head-contents (if standalone?
+                        ;; https://medium.com/appscope/designing-native-like-progressive-web-apps-for-ios-1b3cdda1d0e8
+                        (into head-contents
+                              [[:meta {:name "apple-mobile-web-app-capable" :content "yes"}]
+                               [:meta {:name "apple-mobile-web-app-title" :content (-> app-info :app-label)}]
+                               [:link {:rel "apple-touch-icon" :href "/apple-touch-icon.png"}]])
                         head-contents)
         favicon? (if (contains? config :browserapp/favicon?)
                    (-> config :browserapp/favicon?)
