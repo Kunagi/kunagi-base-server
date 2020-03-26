@@ -1,6 +1,9 @@
 (ns kunagi-base-server.modules.http-server.model
   (:require
    [clojure.spec.alpha :as s]
+
+   [kcu.sapp :as sapp]
+
    [kunagi-base.utils :as utils]
    [kunagi-base.appmodel :as am :refer [def-module def-entity-model]]
 
@@ -69,4 +72,13 @@
    :route/serve-f #(-> % :http/request
                        :session
                        :ring.middleware.anti-forgery/anti-forgery-token)
+   :route/req-perms []})
+
+
+(def-route
+  {:route/id ::conversation
+   :route/module [:module/ident :demo-serverapp]
+   :route/path "/api/conversation"
+   :route/method :post
+   :route/serve-f #(sapp/serve-conversation %)
    :route/req-perms []})
