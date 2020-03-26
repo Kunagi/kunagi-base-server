@@ -57,3 +57,13 @@
   {:init-function/id ::start
    :init-function/module [:module/ident :http-server]
    :init-function/f impl/start!})
+
+
+(def-route
+  {:route/id ::anti-forgery-token
+   :route/module [:module/ident :http.server]
+   :route/path "/api/anti-forgery-token"
+   :route/serve-f #(-> % :http/request
+                       :session
+                       :ring.middleware.anti-forgery/anti-forgery-token)
+   :route/req-perms []})
