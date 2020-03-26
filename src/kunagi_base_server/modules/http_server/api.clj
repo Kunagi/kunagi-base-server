@@ -68,11 +68,36 @@
              :body "Internal Server Error"}))))))
 
 
+(defn- new-post-handler
+  [{:as handler
+    :keys [serve-f]}]
+  (fn [req]
+    (let [context (-> (context/from-http-request req)
+                      (auth/update-context))]
+      (if-not (request-permitted? context handler)
+        {:status 403
+         :body "Forbidden"}
+        (try
+          (serve-f context)
+          "ok"
+          (catch Throwable ex
+            (tap> [:err ::http-request-handlig-failed ex])
+            {:status 500
+             :body "Internal Server Error"}))))))
+
+
 (defn GET
   [{:as handler
     :keys [path]}]
   (s/assert ::route-path path)
   (compojure/GET path [] (new-get-handler handler)))
+
+
+(defn POST
+  [{:as handler
+    :keys [path]}]
+  (s/assert ::route-path path)
+  (compojure/POST path [] (new-post-handler handler)))
 
 
 (defn- serve-file [file context]
@@ -149,17 +174,17 @@
 
 (defn- routes-from-appmodel []
   (let [routes (am/q!
-                '[:find ?path ?serve-f ?req-perms
+                '[:find ?path ?serve-f ?req-perms ?method
                   :where
                   [?r :route/path ?path]
                   [?r :route/serve-f ?serve-f]
-                  [?r :route/req-perms ?req-perms]])]
+                  [?r :route/req-perms ?req-perms]
+                  [?r :route/method ?method]])]
     (map
-     (fn [[path serve-f req-perms]]
-       (GET
-        {:path path
-         :serve-f serve-f
-         :req-perms req-perms}))
+     (fn [[path serve-f req-perms method]]
+       (if (= :post method)
+         (POST {:path path :serve-f serve-f :req-perms req-perms})
+         (GET {:path path :serve-f serve-f :req-perms req-perms})))
      routes)))
 
 

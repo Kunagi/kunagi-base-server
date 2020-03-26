@@ -18,18 +18,20 @@
 (def-entity-model
   :http-server ::route
   {:route/path {:uid? true :spec string?}
+   :route/ident {} ; deprecated
    :route/serve-f {:req? true :spec fn?}
    :route/req-perms {:spec (s/coll-of qualified-keyword?)}})
 
 
 (defn def-route [route]
-  (utils/assert-entity
-   route
-   {:req {:route/module ::am/entity-ref}}
-   (str "Invalid route " (-> route :route/id) "."))
-  (am/register-entity
-   :route
-   route))
+  (let [route (assoc route :route/method (get route :route/method :get))]
+    (utils/assert-entity
+     route
+     {:req {:route/module ::am/entity-ref}}
+     (str "Invalid route " (-> route :route/id) "."))
+    (am/register-entity
+     :route
+     route)))
 
 
 ;;; routes-wrapper
@@ -37,7 +39,8 @@
 
 (def-entity-model
   :http-server ::routes-wrapper
-  {:routes-wrapper/wrapper-f {:req? true :spec fn?}})
+  {:routes-wrapper/wrapper-f {:req? true :spec fn?}
+   :routes-wrapper/ident {}}) ; deprecated
 
 
 (defn def-routes-wrapper [routes-wrapper]
