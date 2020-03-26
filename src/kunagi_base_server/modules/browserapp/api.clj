@@ -8,7 +8,6 @@
 (defn- browserapp-config [req context]
   (-> {}
       (merge (-> context :db :appconfig/config :browserapp/config))
-      (assoc :auth/anti-forgery-token (-> req :session :ring.middleware.anti-forgery/anti-forgery-token))
       (assoc :auth/user (auth/user--for-browserapp context))
       (assoc :serverapp/info (-> context :db :app/info))))
 
