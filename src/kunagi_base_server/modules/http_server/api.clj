@@ -23,21 +23,14 @@
    [kunagi-base.context :as context]
    [kunagi-base.auth.api :as auth]
    [kunagi-base.cqrs.api :as cqrs]
-   [kunagi-base-server.modules.assets.api :as assets]))
+   [kunagi-base-server.modules.assets.api :as assets]
+   [kcu.sapp :as sapp]))
 
 
 (s/def ::route-path string?)
 
 
 ;;; appmodel
-
-
-
-
-
-
-
-
 
 
 ;;;
@@ -230,16 +223,37 @@
 
 (defn- on-data-received [data]
   ;; (tap> [:!!! ::data-received data])
-  (when (= :kunagi-base/event (-> data :id))
+
+  (case (-> data :id)
+
+    :chsk/ws-ping
+    ::nop
+
+    :chsk/uidport-open
+    ::nop
+
+    :kcu.bapp/dispatch
+    (sapp/dispatch-from-bapp
+     (-> data :event second)
+     (-> data context/from-http-async-data
+         auth/update-context
+         (assoc :comm/response-f (partial respond-to-client
+                                          (-> data :send-fn) (-> data :uid)))))
+
+    :kcu.bapp/conversation-messages
+    (tap> [:!!! ::conversation-messages-received (-> data :event second)])
+
+    :kunagi-base/event
     (on-event-received
      (-> data :event second)
      (-> data
          context/from-http-async-data
          auth/update-context
-         (assoc :comm/response-f (partial
-                                  respond-to-client
-                                  (-> data :send-fn)
-                                  (-> data :uid)))))))
+         (assoc :comm/response-f (partial respond-to-client
+                                          (-> data :send-fn) (-> data :uid)))))
+
+    (tap> [:err ::unsupported-async-message-received data])))
+
 
 
 (defn- create-socket
@@ -252,7 +266,10 @@
                (fn [_ _ old-val new-val]
                  (when (not= old-val new-val)
                    (on-connections-changed old-val new-val))))
-    (sente/start-server-chsk-router! (:ch-recv socket) #(on-data-received %))
+    (sente/start-server-chsk-router!
+     (:ch-recv socket)
+     #(on-data-received %))
+     ;#(when-not (= "chsk" (-> % :id)) on-data-received %))
     socket))
 
 

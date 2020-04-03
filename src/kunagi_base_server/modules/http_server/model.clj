@@ -74,11 +74,24 @@
                        :ring.middleware.anti-forgery/anti-forgery-token)
    :route/req-perms []})
 
+(def-route
+  {:route/id ::post-messages
+   :route/module [:module/ident :demo-serverapp]
+   :route/path "/api/post-messages"
+   :route/method :post
+   :route/serve-f #(sapp/http-serve-post-messages %)
+   :route/req-perms []})
 
 (def-route
-  {:route/id ::conversation
+  {:route/id ::messages
    :route/module [:module/ident :demo-serverapp]
-   :route/path "/api/conversation"
-   :route/method :post
-   :route/serve-f #(sapp/serve-conversation %)
+   :route/path "/api/messages"
+   :route/serve-f #(sapp/http-serve-messages %)
+   :route/req-perms []})
+
+(def-route
+  {:route/id ::query
+   :route/module [:module/ident :demo-serverapp]
+   :route/path "/api/query"
+   :route/serve-f #(sapp/http-serve-query %)
    :route/req-perms []})
