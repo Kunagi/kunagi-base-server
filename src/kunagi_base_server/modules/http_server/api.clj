@@ -237,9 +237,14 @@
 
 (defn- on-subscription-changed
   [subscription respond-f new-value unsubscribe-f]
-  (tap> [:!!! ::on-subscription-changed subscription])
   (respond-f [:sapp/subscription-changed {:subscription subscription
                                           :new-value new-value}]))
+
+
+(defn- on-command-callback
+  [command respond-f result]
+  (respond-f [:sapp/command-callback {:command-id (-> command :command/id)
+                                      :result result}]))
 
 
 (defn- on-data-received [data]
@@ -258,6 +263,9 @@
 
     :kcu.bapp/dispatch
     (sapp/dispatch-from-bapp (-> data :event second)
+                             (partial on-command-callback
+                                      (-> data :event second)
+                                      (respond-f data))
                              (context-from-http-async-data data))
 
     :kcu.bapp/subscribe
