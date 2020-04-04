@@ -221,6 +221,27 @@
   (send-fn sente-user-id [:kunagi-base/event event]))
 
 
+(defn- respond-f [data]
+  (fn [message]
+    (let [send-fn (-> data :send-fn)
+          uid (-> data :uid)]
+      (send-fn uid message))))
+
+
+(defn- context-from-http-async-data [data]
+  (-> data
+      context/from-http-async-data
+      auth/update-context
+      (assoc :comm/response-f (respond-f data))))
+
+
+(defn- on-subscription-changed
+  [subscription respond-f new-value unsubscribe-f]
+  (tap> [:!!! ::on-subscription-changed subscription])
+  (respond-f [:sapp/subscription-changed {:subscription subscription
+                                          :new-value new-value}]))
+
+
 (defn- on-data-received [data]
   ;; (tap> [:!!! ::data-received data])
 
@@ -232,25 +253,26 @@
     :chsk/uidport-open
     ::nop
 
+    :chsk/uidport-close
+    ::nop
+
     :kcu.bapp/dispatch
-    (sapp/dispatch-from-bapp
-     (-> data :event second)
-     (-> data context/from-http-async-data
-         auth/update-context
-         (assoc :comm/response-f (partial respond-to-client
-                                          (-> data :send-fn) (-> data :uid)))))
+    (sapp/dispatch-from-bapp (-> data :event second)
+                             (context-from-http-async-data data))
+
+    :kcu.bapp/subscribe
+    (sapp/subscribe (-> data :event second)
+                    (partial on-subscription-changed
+                             (-> data :event second)
+                             (respond-f data))
+                    (context-from-http-async-data data))
 
     :kcu.bapp/conversation-messages
     (tap> [:!!! ::conversation-messages-received (-> data :event second)])
 
     :kunagi-base/event
-    (on-event-received
-     (-> data :event second)
-     (-> data
-         context/from-http-async-data
-         auth/update-context
-         (assoc :comm/response-f (partial respond-to-client
-                                          (-> data :send-fn) (-> data :uid)))))
+    (on-event-received (-> data :event second)
+                       (context-from-http-async-data data))
 
     (tap> [:err ::unsupported-async-message-received data])))
 
